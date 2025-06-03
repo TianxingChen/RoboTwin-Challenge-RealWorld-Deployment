@@ -2,6 +2,7 @@
 
 ```
 pip install pyrealsense2
+cd piper_sdk
 pip install -e .
 ```
 
