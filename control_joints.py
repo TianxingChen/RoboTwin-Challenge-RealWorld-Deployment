@@ -14,8 +14,8 @@ class ControlJoints:
         self.right_arm = ControlSingleArm(right_can)
 
     def control(self, joints):
-        self.left_arm.control(joints_list[:7])
-        self.right_arm.control(joints_list[7:])
+        self.left_arm.control(joints[:7])
+        self.right_arm.control(joints[7:])
         time.sleep(0.03)
 
 class ControlSingleArm:
