@@ -8,8 +8,17 @@ from piper_sdk.piper_sdk import *  # Assuming this is a placeholder for actual S
 import threading
 import sys
 
+class ControlJoints:
+    def __init__(self, left_can="can_left_1", right_can="can_right_1"):
+        self.left_arm = ControlSingleArm(left_can)
+        self.right_arm = ControlSingleArm(right_can)
 
-class ControlArm:
+    def control(self, joints):
+        self.left_arm.control(joints_list[:7])
+        self.right_arm.control(joints_list[7:])
+        time.sleep(0.03)
+
+class ControlSingleArm:
     def __init__(self, can_name="can_left_1"):
         host = "127.0.0.1"
         if can_name == "can_left_1":
@@ -60,8 +69,7 @@ if __name__ == "__main__":
 
     right_can_name = sys.argv[2]
 
-    left_arm = ControlArm(left_can_name)
-    right_arm = ControlArm(right_can_name)
+    controller = ControlJoints(left_can_name, right_can_name)
 
     position = [0, 0, 0, 0, 0, 0, 0]
     count = 0
@@ -80,7 +88,5 @@ if __name__ == "__main__":
             count = 0
 
         joints_list = position + position  # Duplicate for left and right arms
-        left_arm.control(joints_list[:7])
-        right_arm.control(joints_list[7:])
-        time.sleep(0.03)
+        controller.control(joints_list)
         count += 1
