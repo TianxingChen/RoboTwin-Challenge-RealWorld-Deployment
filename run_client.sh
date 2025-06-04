@@ -44,8 +44,4 @@ echo "Right Host: $right_host"
 echo "Left Port: $left_port"
 echo "Right Port: $right_port"
 
-# 启动 Python 客户端脚本，分别控制左臂和右臂
-# 假设 Python 脚本的名称为 control_arm_client.py
-
-# 启动左臂控制进程
 python3 control_joints.py "$left_can" "$right_can"
