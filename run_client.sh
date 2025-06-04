@@ -48,4 +48,4 @@ echo "Right Port: $right_port"
 # 假设 Python 脚本的名称为 control_arm_client.py
 
 # 启动左臂控制进程
-python3 control_arm_client.py "$left_can" "$right_can"
+python3 control_joints.py "$left_can" "$right_can"
