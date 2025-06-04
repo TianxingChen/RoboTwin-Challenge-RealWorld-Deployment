@@ -1,4 +1,4 @@
-from control_arm_client import *
+from control_joints import *
 from read_joints import *
 from realsense import *
 import os
