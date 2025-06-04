@@ -27,9 +27,9 @@ class ControlJoints:
 
         joints_list = list(joints)
         left_joints_list = update(joints_list[:6], factor)
-        left_gripper_val = int(float(joints_list[6]) * factor)
+        left_gripper_val = int(float(joints_list[6]) * 1000 * 1000)
         right_joints_list = update(joints_list[7:13], factor)
-        right_gripper_val = int(float(joints_list[13]) * factor)
+        right_gripper_val = int(float(joints_list[13]) * 1000 * 1000)
 
         left_joints_list = [int(x) for x in left_joints_list]
         right_joints_list = [int(x) for x in right_joints_list]
@@ -84,6 +84,7 @@ if __name__ == "__main__":
     controller = ControlJoints(left_can=left_can, right_can=right_can)
 
     while True:
+        print(count)
         count = count + 1
         if count == 0:
             print("1-----------")
@@ -91,7 +92,7 @@ if __name__ == "__main__":
             # position = [0.2,0.2,-0.2,0.3,-0.2,0.5,0.08]
         elif count == 10:
             print("2-----------")
-            position = [0.2, 0.2, -0.2, 0.3, -0.2, 0.5, 0.8]
+            position = [0.2, 0.2, -0.2, 0.3, -0.2, 0.5, 0.08]
             # position = [0,0,0,0,0,0,0]
             # position = [-8524,104705,-78485,-451,-5486,29843,0]
         elif count == 20:

@@ -24,7 +24,12 @@ if __name__ == "__main__":
         raise ValueError("PLAYER 值无效，必须是 1 或 2")
     # ==== Deploy Action ====
     controller = ControlJoints(left_can=left_can, right_can=right_can)
-    for i in range(3):
-        positions = [0] * 14
-        controller.control(positions)
-        time.sleep(0.1)
+
+    positions = [0] * 14
+    positions[6], positions[13] = 0.08, 0.08
+    controller.control(positions)
+    time.sleep(0.1)
+
+    positions = [0] * 14
+    controller.control(positions)
+    time.sleep(0.1)
