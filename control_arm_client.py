@@ -8,6 +8,7 @@ from piper_sdk.piper_sdk import *  # Assuming this is a placeholder for actual S
 import threading
 import sys
 
+
 class ControlArm:
     def __init__(self, can_name="can_left_1"):
         host = "127.0.0.1"
