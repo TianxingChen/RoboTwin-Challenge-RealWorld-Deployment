@@ -59,15 +59,30 @@ class ControlSingleArm:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print(
-            "Usage: python3 control_arm_client.py <LEFT_CAN_NAME> <LEFT_HOST> <LEFT_PORT> <RIGHT_CAN_NAME> <RIGHT_HOST> <RIGHT_PORT>"
-        )
-        sys.exit(1)
+    # 获取环境变量 PLAYER
+    player_value = os.getenv("PLAYER")
 
-    left_can_name = sys.argv[1]
+    # 检查环境变量是否存在且是数字
+    if player_value is None:
+        raise ValueError("环境变量 PLAYER 未设置")
+    try:
+        player_value = int(player_value)
+    except ValueError:
+        raise ValueError("环境变量 PLAYER 必须是一个整数")
 
-    right_can_name = sys.argv[2]
+    # 根据 PLAYER 的值执行不同的操作
+    if player_value == 1:
+        print("Player 1")
+        left_can, right_can = "can_left_1", "can_right_1"
+    elif player_value == 2:
+        print("Player 2")
+        left_can, right_can = "can_left_2", "can_right_2"
+    else:
+        raise ValueError("PLAYER 值无效，必须是 1 或 2")
+
+
+    left_can_name = left_can
+    right_can_name = right_can
 
     controller = ControlJoints(left_can_name, right_can_name)
 
