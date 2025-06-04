@@ -60,8 +60,8 @@ if __name__ == "__main__":
 
     right_can_name = sys.argv[2]
 
-    left_arm = ControlArmClient(left_can_name)
-    right_arm = ControlArmClient(right_can_name)
+    left_arm = ControlArm(left_can_name)
+    right_arm = ControlArm(right_can_name)
 
     position = [0, 0, 0, 0, 0, 0, 0]
     count = 0
