@@ -54,7 +54,13 @@ class JointReader:
             + right_gripper_list
         )
 
-        return [x / factor for x in full_state]
+        for i in range(len(full_state)):
+            if i == 6 or i == 13:
+                full_state[i] /= 1000 * 1000
+            else:
+                full_state[i] /= factor
+                
+        return full_state
 
 
 if __name__ == "__main__":
