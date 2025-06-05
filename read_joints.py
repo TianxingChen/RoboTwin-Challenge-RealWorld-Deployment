@@ -1,67 +1,98 @@
-import time
+import numpy as np
+import time, os
+from multiprocessing import shared_memory, Lock, Process
 from piper_sdk.piper_sdk import *
-import pdb, os
+
+def joint_reader_worker(can_name, shm_name, lock, is_left: bool):
+    piper = C_PiperInterface_V2(
+        can_name=can_name,
+        judge_flag=False,
+        can_auto_init=True,
+        dh_is_offset=1,
+        start_sdk_joint_limit=False,
+        start_sdk_gripper_limit=False,
+    )
+    piper.ConnectPort()
+
+    shm = shared_memory.SharedMemory(name=shm_name)
+    data = np.ndarray((7,), dtype='float32', buffer=shm.buf)
+
+    factor = 57295.7795
+
+    def extract(joint_msg, gripper_msg):
+        joints = joint_msg.joint_state
+        joint_list = [
+            joints.joint_1,
+            joints.joint_2,
+            joints.joint_3,
+            joints.joint_4,
+            joints.joint_5,
+            joints.joint_6,
+        ]
+        gripper = gripper_msg.gripper_state.grippers_angle
+
+        for i in range(6):
+            joint_list[i] = joint_list[i] / factor
+        gripper = gripper / (1000 * 1000)
+
+        return joint_list + [gripper]
+    count = 0
+    while True:
+        count = count+1
+        if(count > 500):
+            # print(piper.GetCanFps())
+            count = 0
+        try:
+            joint_msg = piper.GetArmJointMsgs()
+            gripper_msg = piper.GetArmGripperMsgs()
+            values = extract(joint_msg, gripper_msg)
+
+            with lock:
+                data[:] = values
+        except Exception as e:
+            print(f"[{can_name}] error: {e}")
+        time.sleep(0.002)
 
 
 class JointReader:
     def __init__(self, left_can, right_can):
-        self.piper_left = C_PiperInterface_V2(
-            can_name=left_can,
-            judge_flag=False,
-            can_auto_init=True,
-            dh_is_offset=1,
-            start_sdk_joint_limit=False,
-            start_sdk_gripper_limit=False,
+        self.left_shm = shared_memory.SharedMemory(create=True, size=7 * 4, name="left_data")
+        self.right_shm = shared_memory.SharedMemory(create=True, size=7 * 4, name="right_data")
+
+        self.left_lock = Lock()
+        self.right_lock = Lock()
+
+        self.left_array = np.ndarray((7,), dtype='float32', buffer=self.left_shm.buf)
+        self.right_array = np.ndarray((7,), dtype='float32', buffer=self.right_shm.buf)
+
+        self.left_proc = Process(
+            target=joint_reader_worker,
+            args=(left_can, "left_data", self.left_lock, True),
+        )
+        self.right_proc = Process(
+            target=joint_reader_worker,
+            args=(right_can, "right_data", self.right_lock, False),
         )
 
-        self.piper_right = C_PiperInterface_V2(
-            can_name=right_can,
-            judge_flag=False,
-            can_auto_init=True,
-            dh_is_offset=1,
-            start_sdk_joint_limit=False,
-            start_sdk_gripper_limit=False,
-        )
-        self.piper_left.ConnectPort()
-        self.piper_right.ConnectPort()
+        self.left_proc.start()
+        self.right_proc.start()
 
     def get_joint_value(self):
+        with self.left_lock:
+            left = self.left_array.copy()
+        with self.right_lock:
+            right = self.right_array.copy()
+        return list(left) + list(right)
 
-        factor = 57295.7795  # 1000*180/3.1415926
-
-        left_joints = self.piper_left.GetArmJointMsgs()
-        left_gripper = self.piper_left.GetArmGripperMsgs()
-        right_joints = self.piper_right.GetArmJointMsgs()
-        right_gripper = self.piper_right.GetArmGripperMsgs()
-
-        def update(joint_message):
-            joint_1 = joint_message.joint_state.joint_1
-            joint_2 = joint_message.joint_state.joint_2
-            joint_3 = joint_message.joint_state.joint_3
-            joint_4 = joint_message.joint_state.joint_4
-            joint_5 = joint_message.joint_state.joint_5
-            joint_6 = joint_message.joint_state.joint_6
-            return [joint_1, joint_2, joint_3, joint_4, joint_5, joint_6]
-
-        left_joints_list = update(left_joints)
-        right_joints_list = update(right_joints)
-        left_gripper_list = [left_gripper.gripper_state.grippers_angle]
-        right_gripper_list = [right_gripper.gripper_state.grippers_angle]
-        full_state = (
-            left_joints_list
-            + left_gripper_list
-            + right_joints_list
-            + right_gripper_list
-        )
-
-        for i in range(len(full_state)):
-            if i == 6 or i == 13:
-                full_state[i] /= 1000 * 1000
-            else:
-                full_state[i] /= factor
-                
-        return full_state
-
+    def close(self):
+        self.left_proc.terminate()
+        self.right_proc.terminate()
+        self.left_proc.join()
+        self.right_proc.join()
+        self.left_shm.close()
+        self.left_shm.unlink()
+        self.right_shm.close()
+        self.right_shm.unlink()
 
 if __name__ == "__main__":
     # 获取环境变量 PLAYER
@@ -84,5 +115,8 @@ if __name__ == "__main__":
         left_can, right_can = "can_left_2", "can_right_2"
     else:
         raise ValueError("PLAYER 值无效，必须是 1 或 2")
+
     reader = JointReader(left_can=left_can, right_can=right_can)
-    print(reader.get_joint_value())
+    while True:
+        print(reader.get_joint_value())
+        time.sleep(0.01)
