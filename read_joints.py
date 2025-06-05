@@ -56,8 +56,8 @@ def joint_reader_worker(can_name, shm_name, lock, is_left: bool):
 
 class JointReader:
     def __init__(self, left_can, right_can):
-        self.left_shm = shared_memory.SharedMemory(create=True, size=7 * 4, name="left_data")
-        self.right_shm = shared_memory.SharedMemory(create=True, size=7 * 4, name="right_data")
+        self.left_shm = shared_memory.SharedMemory(create=True, size=7 * 4, name=f"left_data_{left_can}")
+        self.right_shm = shared_memory.SharedMemory(create=True, size=7 * 4, name=f"right_data_{right_can}")
 
         self.left_lock = Lock()
         self.right_lock = Lock()
@@ -67,11 +67,11 @@ class JointReader:
 
         self.left_proc = Process(
             target=joint_reader_worker,
-            args=(left_can, "left_data", self.left_lock, True),
+            args=(left_can, f"left_data_{left_can}", self.left_lock, True),
         )
         self.right_proc = Process(
             target=joint_reader_worker,
-            args=(right_can, "right_data", self.right_lock, False),
+            args=(right_can, f"right_data_{right_can}", self.right_lock, False),
         )
 
         self.left_proc.start()
